@@ -27,6 +27,8 @@ df, labels = fantrax.get_players_mean(False)
 
 # labelsFact = np.append(labelsFact, labelsFact[0])
 
+server = app.server
+
 app.layout = html.Div([
     html.H1('Mean of all players per team'),
     dcc.Graph(
