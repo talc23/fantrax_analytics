@@ -2,7 +2,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
-import numpy as np
+#import numpy as np
 import plotly.graph_objs as go
 import fantrax
 
@@ -12,29 +12,20 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 dfFact, labelsFact = fantrax.get_players_mean(True)
 df, labels = fantrax.get_players_mean(False)
-#print(df.head())
-angles=np.linspace(0, 2*np.pi, len(labels), endpoint=False)
-angles=np.concatenate((angles,[angles[0]]))
-#print(angles)
 
+# stats = {}
 # for i in df.Status.unique():
-#     print(df[df['Status'] == i][labels].values)
-#     break
-#print(df[df['Status'] == 'GREEN'][labels].values[0])
+#     stats[i] = df[df['Status'] == i][labels].values[0]
+#     stats[i] = stats[i].concat(stats[i][0])
 
-stats = {}
-for i in df.Status.unique():
-    stats[i] = df[df['Status'] == i][labels].values[0]
-    stats[i] = np.append(stats[i], stats[i][0])
+# labels = labels.concat(labels[0])
 
-labels = np.append(labels, labels[0])
+# statsfact = {}
+# for i in dfFact.Status.unique():
+#     statsfact[i] = dfFact[dfFact['Status'] == i][labelsFact].values[0]
+#     stats[i] = stats[i].concat(stats[i][0])
 
-statsfact = {}
-for i in dfFact.Status.unique():
-    statsfact[i] = dfFact[dfFact['Status'] == i][labelsFact].values[0]
-    statsfact[i] = np.append(statsfact[i], statsfact[i][0])
-
-labelsFact = np.append(labelsFact, labelsFact[0])
+# labelsFact = np.append(labelsFact, labelsFact[0])
 
 app.layout = html.Div([
     html.H1('Mean of all players per team'),
@@ -43,7 +34,7 @@ app.layout = html.Div([
         figure={
             'data': [
                 go.Scatterpolar(
-                    r = stats[i],
+                    r = df[df['Status'] == i][labels].values[0],
                     theta = labels,
                     mode = 'lines',
                     fill='toself',
@@ -63,7 +54,7 @@ app.layout = html.Div([
         figure={
             'data': [
                 go.Scatterpolar(
-                    r = statsfact[i],
+                    r = dfFact[dfFact['Status'] == i][labels].values[0],
                     theta = labelsFact,
                     mode = 'lines',
                     fill='toself',
