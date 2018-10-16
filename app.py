@@ -36,13 +36,13 @@ app.layout = html.Div([
         figure={
             'data': [
                 go.Scatterpolar(
-                    r = df[df['Status'] == i][labels].values[0],
+                    r = df.iloc[i].values[1:],
                     theta = labels,
                     mode = 'lines',
                     fill='toself',
-                    name=i
-                ) for i in df.Status.unique()
-               
+                    name=df.iloc[i].values[0],
+                    visible='legendonly' if i>=2 else True
+                ) for i in range(len(df))
             ],
             'layout': go.Layout({
                 'showlegend': True,
@@ -56,12 +56,13 @@ app.layout = html.Div([
         figure={
             'data': [
                 go.Scatterpolar(
-                    r = dfFact[dfFact['Status'] == i][labels].values[0],
+                    r = dfFact.iloc[i].values[1:],
                     theta = labelsFact,
                     mode = 'lines',
                     fill='toself',
-                    name=i
-                ) for i in dfFact.Status.unique()
+                    name=dfFact.iloc[i].values[0],
+                    visible='legendonly' if i>=2 else True
+                ) for i in range(len(df))
                
             ],
             'layout': go.Layout({
