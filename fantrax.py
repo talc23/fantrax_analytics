@@ -1,10 +1,10 @@
-import numpy as np # linear algebra
+#import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import os
 
 def get_players_mean(fact=False):
-    players = pd.read_csv('Fantrax-players.csv')
-    dates = pd.read_csv('nba-2018-UTC-08.csv')
+    players = pd.read_csv('./data/Fantrax-players.csv')
+    dates = pd.read_csv('./data/nba-2018-UTC-08.csv')
 
     dates.drop(['Round Number', 'Location', 'Result'],axis=1, inplace=True)
     dates['Date'] = pd.to_datetime(dates['Date'])
