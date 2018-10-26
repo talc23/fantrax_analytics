@@ -2,6 +2,73 @@
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import os
 
+def add_total_games(df):
+    for col in df.columns:
+        if col not in ['Player','Status']:
+            df[col] = df[col].notnull().astype('int')
+
+    df['Games'] = pd.Series([0]*df.shape[0],)
+    for col in df.columns:
+        if col not in ['Player','Status','Games']:
+            df['Games'] += df[col]
+
+    return df
+
+
+def get_teams_categories():
+    ytd = pd.read_csv('./data/fantrax_ytd.csv')
+    projected = pd.read_csv('./data/fantrax_projected.csv')
+    sched = pd.read_csv('./data/fantrax_sched.csv')
+
+    ytd.drop(['Opponent', 'Score', '% Owned', '+/-', 'GP', 'Rk', 'MIN'], axis=1, inplace=True)
+    sched.drop(['Team', 'Status', 'Position', 'Rk', 'Score', '% Owned', '+/-'], inplace=True,axis=1)
+    
+    sched = add_total_games(sched)
+
+    currentPeriodDates = sched.columns[1:-1]
+
+    projectedClean = projected.drop(['Team','MIN', 'Position', 'Status', 'FG%', 'FT%', 'Rk', 'Opponent', 'Score', '% Owned', '+/-'],axis=1)
+    ytdClean = ytd.drop(['FG%', 'FT%'],axis=1)
+    mergedStats = ytdClean.merge(projectedClean, on='Player', suffixes=('_ytd', '_projected'))
+    mergedStats = mergedStats.merge(sched, on='Player',)
+    mergedStats.head()
+
+    mergedStatsGrouped = mergedStats.copy()
+    mergedStatsGrouped.drop(['Team', 'Position','GP'], axis=1, inplace=True)
+    for col in mergedStatsGrouped.columns:
+        if col not in ['Player','Team','Position', 'Status'] and col not in currentPeriodDates and col != 'Games':
+            mergedStatsGrouped[col+'_Fact'] = mergedStatsGrouped[col]*mergedStatsGrouped['Games']
+            mergedStatsGrouped.drop(col, axis=1, inplace=True)
+
+    aggDict = {
+        
+    }
+
+    for date in currentPeriodDates:
+        aggDict[str(date)] = 'sum'
+    aggDict['Games'] = 'sum'
+    for col in mergedStatsGrouped.columns:
+        if col not in ['Player','Team','Position', 'Status'] and col not in aggDict.keys():
+            aggDict[col] = 'sum'
+    mergedStatsGrouped = mergedStatsGrouped.groupby('Status', as_index=False).agg(aggDict)
+    mergedStatsGrouped['FG%'] = mergedStatsGrouped['FGM_ytd_Fact']/mergedStatsGrouped['FGA_ytd_Fact']*100
+    mergedStatsGrouped['FT%'] = mergedStatsGrouped['FTM_ytd_Fact']/mergedStatsGrouped['FTA_ytd_Fact']*100
+    mergedStatsGrouped
+
+    mergedStatsGroupedOnlyYtd = mergedStatsGrouped.copy()
+    for col in mergedStatsGroupedOnlyYtd.columns:
+        if col.endswith('_projected_Fact') or col in currentPeriodDates:
+           mergedStatsGroupedOnlyYtd.drop(col, axis=1, inplace=True)
+
+    mergedStatsGroupedOnlyProj = mergedStatsGrouped.copy()
+    for col in mergedStatsGroupedOnlyProj.columns:
+        if col.endswith('_ytd_Fact') or col in currentPeriodDates:
+           mergedStatsGroupedOnlyProj.drop(col, axis=1, inplace=True)
+
+    print(mergedStatsGroupedOnlyYtd.head())
+    print(mergedStatsGroupedOnlyProj.head())
+    return mergedStatsGroupedOnlyYtd, mergedStatsGroupedOnlyProj
+
 def get_players_mean(fact=False):
     players = pd.read_csv('./data/Fantrax-players.csv')
     dates = pd.read_csv('./data/nba-2018-UTC-08.csv')
@@ -97,101 +164,3 @@ def get_players_mean(fact=False):
                 playersStatsFactorizedByGamesGrouped[label]=1-playersStatsFactorizedByGamesGrouped[label]
     
     return playersStatsFactorizedByGamesGrouped, labels
-
-
-# from ipywidgets import interact, interactive, fixed, interact_manual
-# import ipywidgets as widgets
-# def f(x):
-#     return x
-
-# import seaborn as sns
-# import matplotlib.pyplot as plt
-
-# from ipywidgets import Checkbox, interactive
-# from IPython.display import display
-
-# l = playersStatsFactorizedByGamesGrouped['Status']
-# chk = [Checkbox(description=a) for a in l]
-
-# def updatePlot(**k):
-#     #print(k)
-#     teamsToShow = []
-#     for key in k.keys():
-#         if k[key] is True:
-#             teamsToShow.append(key)
-#     if len(teamsToShow) == 0:
-#         return
-#     print(teamsToShow)
-#     fig=plt.figure(figsize=(12, 10))
-#     labels=np.array(playersStatsFactorizedByGamesGrouped.columns[1:])
-#     ax = fig.add_subplot(111, polar=True)
-#     ax.set_title("Compare")
-#     angles=np.linspace(0, 2*np.pi, len(labels), endpoint=False)
-#     angles=np.concatenate((angles,[angles[0]]))
-#     ax.set_thetagrids(angles * 180/np.pi, labels)
-#     i=0
-#     for team in teamsToShow:
-#         color='C'+str(i)
-#         stats=playersStatsFactorizedByGamesGrouped[playersStatsFactorizedByGamesGrouped['Status']==team][labels].values[0]
-#         stats=np.concatenate((stats,[stats[0]]))
-
-#         ax.plot(angles, stats, 'o-', linewidth=2, label=team)
-#         ax.fill(angles, stats, alpha=0.25, color=color)
-#         i+=1
-#     legend = ax.legend(loc=1)
-
-# interact(updatePlot, **{c.description: c.value for c in chk})
-
-
-
-
-
-# from ipywidgets import interact, interactive, fixed, interact_manual
-# import ipywidgets as widgets
-# def f(x):
-#     return x
-
-# import seaborn as sns
-# import matplotlib.pyplot as plt
-
-# from ipywidgets import Checkbox, interactive
-# from IPython.display import display
-
-# l = playersGrouped['Status']
-# chk = [Checkbox(description=a) for a in l]
-
-# def updatePlot(**k):
-#     #print(k)
-#     teamsToShow = []
-#     for key in k.keys():
-#         if k[key] is True:
-#             teamsToShow.append(key)
-#     if len(teamsToShow) == 0:
-#         return
-#     print(teamsToShow)
-#     fig=plt.figure(figsize=(12, 10))
-#     labels=np.array(playersGrouped.columns[1:])
-#     ax = fig.add_subplot(111, polar=True)
-#     ax.set_title("Compare")
-#     i=0
-#     for team in teamsToShow:
-#         color='C'+str(i)
-#         stats=playersGroupedNorm[playersGroupedNorm['Status']==team][labels].values[0]
-#         #print(stats)
-#         angles=np.linspace(0, 2*np.pi, len(labels), endpoint=False)
-#         # close the plot
-#         stats=np.concatenate((stats,[stats[0]]))
-#         angles=np.concatenate((angles,[angles[0]]))
-
-#         ax = fig.add_subplot(111, polar=True)
-#         ax.plot(angles, stats, 'o-', linewidth=2, label=team)
-#         ax.fill(angles, stats, alpha=0.25, color=color)
-#         ax.set_thetagrids(angles * 180/np.pi, labels)
-#         #ax.set_title([name], color=color)
-#         ax.grid(True)
-#         i+=1
-#     legend = ax.legend(loc=1)
-
-# interact(updatePlot, **{c.description: c.value for c in chk})
-
-#$print(get_players_mean()[0])

@@ -1,0 +1,8 @@
+projected:
+https://www.fantrax.com/fantasy/league/qz63339pjk3tf593/players?view=STATS&positionOrGroup=BASKETBALL_PLAYER&seasonOrProjection=PROJECTION_0_40x_SEASON&timeframeTypeCode=YEAR_TO_DATE&transactionPeriod=1&miscDisplayType=1&sortType=SCORE&maxResultsPerPage=20&statusOrTeamFilter=ALL_TAKEN&scoringCategoryType=1&timeStartType=PERIOD_ONLY&pageNumber=1&schedulePageAdj=0&startDate=2018-10-16&endDate=2019-04-10&searchName=&txs=false&teamId=bs75nrzojk5dhykx
+
+ytd:
+https://www.fantrax.com/fantasy/league/qz63339pjk3tf593/players?view=STATS&positionOrGroup=BASKETBALL_PLAYER&seasonOrProjection=SEASON_40x_YEAR_TO_DATE&timeframeTypeCode=YEAR_TO_DATE&transactionPeriod=1&miscDisplayType=1&sortType=SCORE&maxResultsPerPage=20&statusOrTeamFilter=ALL_TAKEN&scoringCategoryType=1&timeStartType=PERIOD_ONLY&pageNumber=1&schedulePageAdj=0&startDate=2018-10-16&endDate=2019-04-10&searchName=&txs=false&teamId=bs75nrzojk5dhykx
+
+sched:
+https://www.fantrax.com/fantasy/league/qz63339pjk3tf593/players?view=SCHEDULE_PERIOD&positionOrGroup=BASKETBALL_PLAYER&seasonOrProjection=SEASON_40x_YEAR_TO_DATE&timeframeTypeCode=YEAR_TO_DATE&transactionPeriod=1&miscDisplayType=1&sortType=SCORE&maxResultsPerPage=20&statusOrTeamFilter=ALL_TAKEN&scoringCategoryType=1&timeStartType=PERIOD_ONLY&pageNumber=1&schedulePageAdj=0&startDate=2018-10-16&endDate=2019-04-10&searchName=&txs=false&teamId=bs75nrzojk5dhykx
