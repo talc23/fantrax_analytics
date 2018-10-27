@@ -178,9 +178,19 @@ def update_radio(input_value):
         'data': traces,
         'layout': go.Layout(
             showlegend=True,
-            radialaxis = {
-                'visible':False
-            }
+            autosize=False,
+            polar = dict(
+                        # domain = dict(
+                        #     x = [0,0.4],
+                        #     y = [0,1]
+                        # ),
+                        radialaxis = dict(
+                            # tickfont = dict(
+                            # size = 8
+                            # )
+                            range = [0,1]
+                        )
+            )
         )
     }
 
