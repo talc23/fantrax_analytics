@@ -65,8 +65,6 @@ def get_teams_categories():
         if col.endswith('_ytd_Fact') or col in currentPeriodDates:
            mergedStatsGroupedOnlyProj.drop(col, axis=1, inplace=True)
 
-    print(mergedStatsGroupedOnlyYtd.head())
-    print(mergedStatsGroupedOnlyProj.head())
     return mergedStatsGroupedOnlyYtd, mergedStatsGroupedOnlyProj
 
 def get_players_mean(fact=False):

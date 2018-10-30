@@ -10,7 +10,7 @@ import fantrax
 #import Teams as teams
 
 app = dash.Dash(__name__)
-app.config['suppress_callback_exceptions']=True
+app.config['suppress_callback_exceptions'] = True
 
 server = app.server
 
@@ -21,16 +21,20 @@ app.layout = html.Div([
     dcc.Tabs(
         className='button-primary',
         id='tabs',
-        style={"height":"20","verticalAlign":"middle"},
-                children=[
-                    dcc.Tab(className='custom-tab', label="Teams comparison", value="teams_tab"),
-                    dcc.Tab(className='custom-tab', label="Roster progress", value="roster_tab"),
-                    dcc.Tab(className='custom-tab', label="Players", value="players_tab"),
-                ],
-                value="teams_tab",
+        style={"height": "20", "verticalAlign": "middle"},
+        children=[
+            dcc.Tab(className='custom-tab',
+                    label="Teams comparison", value="teams_tab"),
+            dcc.Tab(className='custom-tab',
+                    label="Roster progress", value="roster_tab"),
+            dcc.Tab(className='custom-tab',
+                    label="Players", value="players_tab"),
+        ],
+        value="teams_tab",
     ),
     html.Div(id="tab_content", className="row", style={"margin": "2% 3%"}),
 ])
+
 
 @app.callback(Output("tab_content", "children"), [Input("tabs", "value")])
 def render_content(tab):
@@ -42,6 +46,7 @@ def render_content(tab):
         return None
     else:
         return teams.layout()
+
 
 dfYtd, dfProj = fantrax.get_teams_categories()
 renameDict = {}
@@ -60,7 +65,7 @@ for col in dfYtd.columns:
         dfProj[col] = dfProj[col].round(2)
 
 #df_norm = (dfYtd - dfYtd.mean()) / (dfYtd.max() - dfYtd.min())
-df_norm=dfYtd
+df_norm = dfYtd
 
 teamNames = dfYtd['Status']
 labels = dfYtd.columns[1:]
@@ -69,30 +74,57 @@ marksLabels = {i: '' for i in range(10)}
 marksLabels[0] = 'Projected'
 marksLabels[10] = 'YTD'
 
+
 def teams_layout():
     retLayout = html.Div([
-    # dcc.RadioItems(
-    #     options=[
-    #         {'label': teamNames[i], 'value': teamNames[i]} for i in range(len(teamNames))
-    #     ],
-    #     value=teamNames[0]
-    # ),
-    dcc.Graph(
-        id='compareRadio',
-    ),
-    dcc.Graph(
-        id='compareFactBar',
-    ),
-    dcc.Slider(
-        id='projectedYtdAlphaSlider',
-        min=0,
-        max=10,
-        step=0.5,
-        marks=marksLabels,
-        value=2
-    )
+        # dcc.RadioItems(
+        #     options=[
+        #         {'label': teamNames[i], 'value': teamNames[i]} for i in range(len(teamNames))
+        #     ],
+        #     value=teamNames[0]
+        # ),
+        html.Div([
+            html.Div([
+                dcc.Dropdown(
+                    id='left-dropdown',
+                    options=[
+                        dict(label=df_norm.iloc[i].values[0], value=df_norm.iloc[i].values[0]) for i in range(len(df_norm['Status']))
+                    ]
+                ),
+            ],
+                className="six columns",
+            ),
+            html.Div([
+                dcc.Dropdown(
+                    id='right-dropdown',
+                    options=[
+                        dict(label=df_norm.iloc[i].values[0], value=df_norm.iloc[i].values[0]) for i in range(len(df_norm['Status']))
+                    ]
+                ),
+            ],
+                className="six columns",
+            ),
+        ],
+            className="row",
+            style={"paddingTop": "2%"},
+        ),
+        dcc.Graph(
+            id='compareRadio',
+        ),
+        dcc.Graph(
+            id='compareFactBar',
+        ),
+        dcc.Slider(
+            id='projectedYtdAlphaSlider',
+            min=0,
+            max=10,
+            step=0.5,
+            marks=marksLabels,
+            value=2
+        )
     ])
     return retLayout
+
 
 @app.callback(
     Output(component_id='compareFactBar', component_property='figure'),
@@ -101,12 +133,8 @@ def teams_layout():
 def update_bar(input_value):
     df_norm = pd.DataFrame()
     df_norm['Status'] = dfYtd['Status']
-    for col in dfYtd.columns:
-        if col in ['FTA','FTM','FGA','FGM']:
-            continue
-        if dfYtd[col].dtype == np.float64:
-            df_norm[col] = dfYtd[col]*(input_value/10)+dfProj[col]*(1-input_value/10)
-    traces = []
+    df_values = pd.DataFrame()
+    df_values['Status'] = dfYtd['Status']
     rangeDict = {
         'FG%': 100,
         'FT%': 100,
@@ -118,21 +146,38 @@ def update_bar(input_value):
         'REB': 400,
         '3PTM': 150,
     }
+    for col in dfYtd.columns:
+        if col in ['FTA', 'FTM', 'FGA', 'FGM']:
+            continue
+        if dfYtd[col].dtype == np.float64:
+            df_values[col] = dfYtd[col] * \
+                (input_value/10)+dfProj[col]*(1-input_value/10)
+            df_norm[col] = df_values[col] / rangeDict[col]
+    traces = []
+
     for i in range(len(dfYtd)):
         traces.append(go.Bar(
-            y= df_norm.columns[1:],
-            x= df_norm.iloc[i].values[1:],
+            y=df_norm.columns[1:],
+            x=df_norm.iloc[i].values[1:],
+            customdata=df_values.iloc[i].values[1:],
+            text=df_values.iloc[i].values[1:],
+            hoverinfo='name+text',
             name=df_norm.iloc[i].values[0],
-            orientation = 'h',
-            visible='legendonly' if i>=2 else True
+            orientation='h',
+            visible='legendonly' if i >= 2 else True
         ))
 
+    layoutDict = {
+        'barmode': 'group',
+        'showlegend': True,
+        'xaxis': dict(visible=False, range=[0, 1])
+    }
+
+    print(layoutDict)
     return {
         'data': traces,
-        'layout': go.Layout(
-            barmode='group',
-            showlegend=True,
-        )
+        'layout': go.Layout(layoutDict
+                            )
     }
 
 
@@ -157,42 +202,39 @@ def update_radio(input_value):
     }
 
     for col in dfYtd.columns:
-        if col in ['FTA','FTM','FGA','FGM']:
+        if col in ['FTA', 'FTM', 'FGA', 'FGM']:
             continue
         if dfYtd[col].dtype == np.float64:
-            df_norm[col] = dfYtd[col]*(input_value/10)+dfProj[col]*(1-input_value/10)
+            df_norm[col] = dfYtd[col] * \
+                (input_value/10)+dfProj[col]*(1-input_value/10)
             df_norm[col] = df_norm[col]/rangeDict[col]
     traces = []
 
     for i in range(len(df_norm)):
         traces.append(go.Scatterpolar(
-                        r = df_norm.iloc[i].values[1:],
-                        theta = df_norm.columns[1:],
-                        mode = 'lines',
-                        fill='tonext',
-                        name=df_norm.iloc[i].values[0],
-                        connectgaps=True,
-                        visible='legendonly' if i>=2 else True
-                    ))
+            r=df_norm.iloc[i].values[1:],
+            theta=df_norm.columns[1:],
+            mode='lines',
+            fill='tonext',
+            name=df_norm.iloc[i].values[0],
+            connectgaps=True,
+            visible='legendonly' if i >= 2 else True
+        ))
     return {
         'data': traces,
         'layout': go.Layout(
             showlegend=True,
             autosize=False,
-            polar = dict(
-                        # domain = dict(
-                        #     x = [0,0.4],
-                        #     y = [0,1]
-                        # ),
-                        radialaxis = dict(
-                            # tickfont = dict(
-                            # size = 8
-                            # )
-                            range = [0,1]
-                        )
+            polar=dict(
+                radialaxis=dict(
+                    range=[0, 1],
+                    visible=False,
+                ),
+
             )
         )
     }
+
 
 if __name__ == '__main__':
     app.run_server()
