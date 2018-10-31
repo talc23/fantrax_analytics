@@ -85,21 +85,41 @@ def teams_layout():
         # ),
         html.Div([
             html.Div([
+                html.P(
+                    "Choose Team",
+                    style={
+                        "textAlign": "left",
+                        "marginBottom": "2",
+                        "marginTop": "4",
+                    },
+                ),
                 dcc.Dropdown(
                     id='left-dropdown',
                     options=[
                         dict(label=df_norm.iloc[i].values[0], value=df_norm.iloc[i].values[0]) for i in range(len(df_norm['Status']))
-                    ]
+                    ],
+                    value=df_norm.iloc[0].values[0],
+                    clearable=False
                 ),
             ],
                 className="six columns",
             ),
             html.Div([
+                html.P(
+                    "Choose Team",
+                    style={
+                        "textAlign": "left",
+                        "marginBottom": "2",
+                        "marginTop": "4",
+                    },
+                ),
                 dcc.Dropdown(
                     id='right-dropdown',
                     options=[
                         dict(label=df_norm.iloc[i].values[0], value=df_norm.iloc[i].values[0]) for i in range(len(df_norm['Status']))
-                    ]
+                    ],
+                    value=df_norm.iloc[1].values[0],
+                    clearable=False
                 ),
             ],
                 className="six columns",
@@ -108,11 +128,13 @@ def teams_layout():
             className="row",
             style={"paddingTop": "2%"},
         ),
-        dcc.Graph(
-            id='compareRadio',
-        ),
-        dcc.Graph(
-            id='compareFactBar',
+        html.P(
+            "Slide left to give more weight to projected stats, or right for Year-To-Date stats",
+            style={
+                "textAlign": "center",
+                "marginBottom": "2",
+                "marginTop": "4",
+            },
         ),
         dcc.Slider(
             id='projectedYtdAlphaSlider',
@@ -121,16 +143,54 @@ def teams_layout():
             step=0.5,
             marks=marksLabels,
             value=2
+        ),
+        dcc.Graph(
+            id='compareRadio',
+        ),
+        dcc.Graph(
+            id='compareFactBar',
         )
     ])
     return retLayout
 
 
 @app.callback(
-    Output(component_id='compareFactBar', component_property='figure'),
-    [Input(component_id='projectedYtdAlphaSlider', component_property='value')]
+    Output(component_id='right-dropdown', component_property='options'),
+    [Input(component_id='left-dropdown', component_property='value')]
 )
-def update_bar(input_value):
+def update_left_dropdown(input_value):
+    options = []
+    for i in range(len(df_norm['Status'])):
+        isDisabled = False
+        if df_norm.iloc[i].values[0] == input_value:
+            isDisabled = True
+        options.append(dict(
+            label=df_norm.iloc[i].values[0], value=df_norm.iloc[i].values[0], disabled=isDisabled))
+    return options
+
+
+@app.callback(
+    Output(component_id='left-dropdown', component_property='options'),
+    [Input(component_id='right-dropdown', component_property='value')]
+)
+def update_right_dropdown(input_value):
+    options = []
+    for i in range(len(df_norm['Status'])):
+        isDisabled = False
+        if df_norm.iloc[i].values[0] == input_value:
+            isDisabled = True
+        options.append(dict(
+            label=df_norm.iloc[i].values[0], value=df_norm.iloc[i].values[0], disabled=isDisabled))
+    return options
+
+
+@app.callback(
+    Output(component_id='compareFactBar', component_property='figure'),
+    [Input(component_id='projectedYtdAlphaSlider', component_property='value'),
+     Input(component_id='left-dropdown', component_property='value'),
+     Input(component_id='right-dropdown', component_property='value')]
+)
+def update_bar(input_value, left_team, right_team):
     df_norm = pd.DataFrame()
     df_norm['Status'] = dfYtd['Status']
     df_values = pd.DataFrame()
@@ -156,16 +216,17 @@ def update_bar(input_value):
     traces = []
 
     for i in range(len(dfYtd)):
-        traces.append(go.Bar(
-            y=df_norm.columns[1:],
-            x=df_norm.iloc[i].values[1:],
-            customdata=df_values.iloc[i].values[1:],
-            text=df_values.iloc[i].values[1:],
-            hoverinfo='name+text',
-            name=df_norm.iloc[i].values[0],
-            orientation='h',
-            visible='legendonly' if i >= 2 else True
-        ))
+        if df_norm.iloc[i].values[0] == left_team or df_norm.iloc[i].values[0] == right_team:
+            traces.append(go.Bar(
+                y=df_norm.columns[1:],
+                x=df_norm.iloc[i].values[1:],
+                customdata=df_values.iloc[i].values[1:],
+                text=df_values.iloc[i].values[1:],
+                hoverinfo='name+text',
+                name=df_norm.iloc[i].values[0],
+                orientation='h',
+                #visible='legendonly' if i >= 2 else True
+            ))
 
     layoutDict = {
         'barmode': 'group',
@@ -173,7 +234,6 @@ def update_bar(input_value):
         'xaxis': dict(visible=False, range=[0, 1])
     }
 
-    print(layoutDict)
     return {
         'data': traces,
         'layout': go.Layout(layoutDict
@@ -183,9 +243,11 @@ def update_bar(input_value):
 
 @app.callback(
     Output(component_id='compareRadio', component_property='figure'),
-    [Input(component_id='projectedYtdAlphaSlider', component_property='value')]
+    [Input(component_id='projectedYtdAlphaSlider', component_property='value'),
+     Input(component_id='left-dropdown', component_property='value'),
+     Input(component_id='right-dropdown', component_property='value')]
 )
-def update_radio(input_value):
+def update_radio(input_value, left_team, right_team):
     df_norm = pd.DataFrame()
     df_norm['Status'] = dfYtd['Status']
 
@@ -211,15 +273,15 @@ def update_radio(input_value):
     traces = []
 
     for i in range(len(df_norm)):
-        traces.append(go.Scatterpolar(
-            r=df_norm.iloc[i].values[1:],
-            theta=df_norm.columns[1:],
-            mode='lines',
-            fill='tonext',
-            name=df_norm.iloc[i].values[0],
-            connectgaps=True,
-            visible='legendonly' if i >= 2 else True
-        ))
+        if df_norm.iloc[i].values[0] == left_team or df_norm.iloc[i].values[0] == right_team:
+            traces.append(go.Scatterpolar(
+                r=df_norm.iloc[i].values[1:],
+                theta=df_norm.columns[1:],
+                mode='lines',
+                fill='tonext',
+                name=df_norm.iloc[i].values[0],
+                connectgaps=True,
+            ))
     return {
         'data': traces,
         'layout': go.Layout(
